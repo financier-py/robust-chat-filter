@@ -5,6 +5,9 @@ description = "Real-time character-level CNN (VDCNN) for toxicity and spam detec
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fastparquet>=2026.3.0",
+    "huggingface-hub>=1.10.2",
     "pandas>=3.0.2",
+    "pyarrow>=23.0.1",
     "torch>=2.11.0",
 ]

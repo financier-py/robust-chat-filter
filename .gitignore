@@ -10,4 +10,5 @@ wheels/
 .venv
 
 # мои сырые файлики датасетики
-raw/
+data/raw/*
+data/processed/*
