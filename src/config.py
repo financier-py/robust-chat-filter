@@ -3,4 +3,8 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    pass
+    max_len: int = 512
+    alphabet: str = "abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 -,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{} "
+
+
+config = Config()
