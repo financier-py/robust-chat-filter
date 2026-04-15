@@ -30,22 +30,20 @@ class CharNet(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
 
         self.feature_make = nn.Sequential(
-            ConvBlock(embed_dim, 64), ConvBlock(64, 128), ConvBlock(128, 256)
+            ConvBlock(embed_dim, 64),
+            nn.Dropout1d(p=dropout / 2),
+            ConvBlock(64, 128),
+            nn.Dropout1d(p=dropout / 2),
+            ConvBlock(128, 256),
         )
 
+        self.spatial_dropout = nn.Dropout1d(p=dropout)
         self.global_pool = nn.AdaptiveMaxPool1d(1)
-
-        self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(256, num_classes)
 
     def forward(self, x: torch.Tensor):
-        x = self.embedding(x)
-        x = x.transpose(1, 2)
-
+        x = self.embedding(x).transpose(1, 2)
         x = self.feature_make(x)
-        x = self.global_pool(x)
-        x = x.squeeze(-1)
-
-        x = self.dropout(x)
+        x = self.spatial_dropout(x)
+        x = self.global_pool(x).squeeze(-1)
         return self.classifier(x)
-    

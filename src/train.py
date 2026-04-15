@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -62,7 +61,7 @@ def train():
     model = CharNet(config.vocab_size, config.embed_dim, config.dropout).to(device)
 
     # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
-    optimizer = AdamW(params=model.parameters(), lr=config.lr)
+    optimizer = AdamW(params=model.parameters(), lr=config.lr, weight_decay=0.05)
 
     # добавил тк появилось плато посмотрим поможет ли хз
     scheduler = ReduceLROnPlateau(
@@ -108,6 +107,7 @@ def train():
                 val_bar.set_postfix(loss=cur_loss.item())
 
         avg_val_loss = val_loss / len(val_loader)
+        scheduler.step(avg_val_loss)
         
         current_lr = optimizer.param_groups[0]['lr']
         print(f"\nЭпоха {epoch + 1} | LR: {current_lr:.6f} | Train Loss: {avg_tr_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
