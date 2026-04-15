@@ -22,7 +22,7 @@ class ConvBlock(nn.Module):
 
 
 class CharNet(nn.Module):
-    def __init__(self, vocab_size: int, embed_dim: int, num_classes: int = 3):
+    def __init__(self, vocab_size: int, embed_dim: int, dropout: float, num_classes: int = 3):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
@@ -33,6 +33,7 @@ class CharNet(nn.Module):
 
         self.global_pool = nn.AdaptiveMaxPool1d(1)
 
+        self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(256, num_classes)
     
     def forward(self, x: torch.Tensor):
@@ -43,4 +44,5 @@ class CharNet(nn.Module):
         x = self.global_pool(x)
         x = x.squeeze(-1)
 
+        x = self.dropout(x)
         return self.classifier(x)

@@ -45,7 +45,7 @@ def train():
         val_dataset, batch_size=config.batch_size * 2, shuffle=False
     )
 
-    model = CharNet(config.vocab_size, embed_dim=config.embed_dim).to(device)
+    model = CharNet(config.vocab_size, config.embed_dim, config.dropout).to(device)
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
     optimizer = AdamW(params=model.parameters(), lr=config.lr)
