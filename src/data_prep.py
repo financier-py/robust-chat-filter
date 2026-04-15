@@ -1,6 +1,9 @@
 from pathlib import Path
-import pandas as pd
 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+
+from config import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RAW_DIR = BASE_DIR / "data" / "raw"
@@ -81,7 +84,14 @@ if __name__ == "__main__":
     final_df = final_df.drop_duplicates(subset=["text"])
     final_df = final_df.dropna(subset=["text"])
 
-    final_df.to_csv(PROCESSED_DIR / "train.csv", index=False)
+    train_df, temp_df = train_test_split(
+        final_df, test_size=0.2, random_state=config.seed
+    )
+    val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=config.seed)
+
+    train_df.to_csv(PROCESSED_DIR / "train.csv", index=False)
+    val_df.to_csv(PROCESSED_DIR / "val.csv", index=False)
+    test_df.to_csv(PROCESSED_DIR / "test.csv", index=False)
 
     print("кол-во строк:", len(final_df))
     print("кол-во токсиков:", final_df["toxic"].sum())
