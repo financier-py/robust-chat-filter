@@ -44,17 +44,3 @@ class CharNet(nn.Module):
         x = x.squeeze(-1)
 
         return self.classifier(x)
-    
-if __name__ == "__main__":
-    # Тест на адекватность (Sanity check)
-    vocab_size = 100 # Представим, что у нас 100 символов в алфавите
-    model = CharNet(vocab_size=vocab_size, embed_dim=64)
-    
-    # Генерируем фейковый батч: 4 сообщения, каждое длиной 512 символов
-    dummy_input = torch.randint(0, vocab_size, (4, 512))
-    
-    # Прогоняем через модель
-    output = model(dummy_input)
-    
-    print("Вход:", dummy_input.shape)
-    print("Выход:", output.shape) # Должно быть [4, 3]
