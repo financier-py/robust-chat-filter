@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -63,11 +64,12 @@ def train():
     # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
     optimizer = AdamW(params=model.parameters(), lr=config.lr)
 
+    # добавил тк появилось плато посмотрим поможет ли хз
     scheduler = ReduceLROnPlateau(
         optimizer, 
-        mode='min',      # Мы хотим, чтобы лосс падал (минимизировался)
-        factor=0.5,      # Если сработает, LR уменьшится в 2 раза
-        patience=2,      # Ждем 2 эпохи без улучшений перед снижением LR
+        mode='min',
+        factor=0.5,
+        patience=2,
     )
 
     best_val_loss = float("inf")

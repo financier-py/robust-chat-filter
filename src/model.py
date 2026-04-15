@@ -48,3 +48,4 @@ class CharNet(nn.Module):
 
         x = self.dropout(x)
         return self.classifier(x)
+    
