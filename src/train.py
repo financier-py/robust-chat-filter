@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
+import torch.nn.functional as F
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -25,6 +26,19 @@ def get_class_weights(df: pd.DataFrame):
     return torch.tensor(pos_weights, dtype=torch.float32)
 
 
+def soft_bce_loss(y_pred, y_true, pos_w):
+    bce = F.binary_cross_entropy_with_logits(
+        y_pred, y_true, pos_weight=pos_w, reduction='none'
+    )
+
+    with torch.no_grad():
+        probs = torch.sigmoid(y_pred)
+    
+    false_obs = (y_true[:, 2] == 0) & (y_true[:, 1] == 1) & (probs[:, 2] > 0.5)
+    bce[false_obs, 2] *= 0.3
+    return bce.mean()
+
+
 def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Проверка проверка {device}")
@@ -46,7 +60,7 @@ def train():
 
     model = CharNet(config.vocab_size, config.embed_dim, config.dropout).to(device)
 
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
     optimizer = AdamW(params=model.parameters(), lr=config.lr)
 
     best_val_loss = float("inf")
@@ -62,7 +76,7 @@ def train():
 
             optimizer.zero_grad()
             y_pred = model(x)
-            cur_loss = criterion(y_pred, y_true)
+            cur_loss = soft_bce_loss(y_pred, y_true, pos_weights)
             cur_loss.backward()
             optimizer.step()
 
@@ -80,7 +94,7 @@ def train():
                 x = x.to(device)
                 y_true = y_true.to(device)
                 y_pred = model(x)
-                cur_loss = criterion(y_pred, y_true)
+                cur_loss = soft_bce_loss(y_pred, y_true, pos_weights)
                 val_loss += cur_loss.item()
                 val_bar.set_postfix(loss=cur_loss.item())
 
