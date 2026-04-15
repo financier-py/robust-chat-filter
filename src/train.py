@@ -26,16 +26,22 @@ def get_class_weights(df: pd.DataFrame):
     return torch.tensor(pos_weights, dtype=torch.float32)
 
 
+# было добавлено тк датасет очень кривой
 def soft_bce_loss(y_pred, y_true, pos_w):
     bce = F.binary_cross_entropy_with_logits(
-        y_pred, y_true, pos_weight=pos_w, reduction='none'
+        y_pred, y_true, pos_weight=pos_w, reduction="none"
     )
 
     with torch.no_grad():
         probs = torch.sigmoid(y_pred)
-    
+    # если текст toxic но модель отвечает obscenity -> штрафуем меньше
     false_obs = (y_true[:, 2] == 0) & (y_true[:, 1] == 1) & (probs[:, 2] > 0.5)
     bce[false_obs, 2] *= 0.3
+
+    # если текст obscenity но модель отвечает toxic -> штрафуем меньше
+    false_toxic = (y_true[:, 2] == 1) & (y_true[:, 1] == 0) & (probs[:, 1] > 0.5)
+    bce[false_toxic, 1] *= 0.3
+
     return bce.mean()
 
 
@@ -65,8 +71,8 @@ def train():
 
     # добавил тк появилось плато посмотрим поможет ли хз
     scheduler = ReduceLROnPlateau(
-        optimizer, 
-        mode='min',
+        optimizer,
+        mode="min",
         factor=0.5,
         patience=2,
     )
@@ -108,9 +114,11 @@ def train():
 
         avg_val_loss = val_loss / len(val_loader)
         scheduler.step(avg_val_loss)
-        
-        current_lr = optimizer.param_groups[0]['lr']
-        print(f"\nЭпоха {epoch + 1} | LR: {current_lr:.6f} | Train Loss: {avg_tr_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(
+            f"\nЭпоха {epoch + 1} | LR: {current_lr:.6f} | Train Loss: {avg_tr_loss:.4f} | Val Loss: {avg_val_loss:.4f}"
+        )
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
