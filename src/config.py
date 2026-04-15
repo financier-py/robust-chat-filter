@@ -8,7 +8,7 @@ class Config:
 
     dropout: float = 0.4
     embed_dim: int = 64
-    batch_size: int = 1024
+    batch_size: int = 512
     lr: float = 5e-4
     epochs: int = 20
 

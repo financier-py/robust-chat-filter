@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 import pandas as pd
 import numpy as np
@@ -52,7 +53,7 @@ def train():
     dataset = CharDataset(df, max_len=config.max_len)
     val_dataset = CharDataset(val_df, max_len=config.max_len)
 
-    dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
     val_loader = DataLoader(
         val_dataset, batch_size=config.batch_size * 2, shuffle=False
     )
@@ -61,6 +62,13 @@ def train():
 
     # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
     optimizer = AdamW(params=model.parameters(), lr=config.lr)
+
+    scheduler = ReduceLROnPlateau(
+        optimizer, 
+        mode='min',      # Мы хотим, чтобы лосс падал (минимизировался)
+        factor=0.5,      # Если сработает, LR уменьшится в 2 раза
+        patience=2,      # Ждем 2 эпохи без улучшений перед снижением LR
+    )
 
     best_val_loss = float("inf")
     for epoch in range(config.epochs):
@@ -98,9 +106,9 @@ def train():
                 val_bar.set_postfix(loss=cur_loss.item())
 
         avg_val_loss = val_loss / len(val_loader)
-        print(
-            f"\nЭпоха {epoch + 1} | Train Loss: {avg_tr_loss:.4f} | Val Loss: {avg_val_loss:.4f}"
-        )
+        
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"\nЭпоха {epoch + 1} | LR: {current_lr:.6f} | Train Loss: {avg_tr_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
