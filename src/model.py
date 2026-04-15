@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int):
+    def init(self, in_channels: int, out_channels: int):
         super().__init__()
 
         self.conv1 = nn.Conv1d(
@@ -22,7 +22,9 @@ class ConvBlock(nn.Module):
 
 
 class CharNet(nn.Module):
-    def __init__(self, vocab_size: int, embed_dim: int, dropout: float, num_classes: int = 3):
+    def init(
+        self, vocab_size: int, embed_dim: int, dropout: float, num_classes: int = 3
+    ):
         super().__init__()
 
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
@@ -35,7 +37,7 @@ class CharNet(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
         self.classifier = nn.Linear(256, num_classes)
-    
+
     def forward(self, x: torch.Tensor):
         x = self.embedding(x)
         x = x.transpose(1, 2)

@@ -7,10 +7,10 @@ class Config:
     alphabet: str = "abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 -,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{} "
 
     dropout: float = 0.4
-    embed_dim: int = 16
-    batch_size: int = 128
-    lr: float = 1e-3
-    epochs: int = 3
+    embed_dim: int = 64
+    batch_size: int = 1024
+    lr: float = 5e-4
+    epochs: int = 20
 
     seed: int = 67
 

@@ -11,7 +11,6 @@ from dataset import CharDataset
 from model import CharNet
 from config import config
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 

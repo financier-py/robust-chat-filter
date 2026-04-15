@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import re
 from sklearn.model_selection import train_test_split
 
 from config import config
@@ -11,6 +12,37 @@ PROCESSED_DIR = BASE_DIR / "data" / "processed"
 URL_SPAM_HF = (
     "hf://datasets/ruSpamModels/russian-spam-detection/processed_combined.parquet"
 )
+
+# URL_TOXIC_HF = "hf://datasets/Mnwa/russian-toxic/data/train-00000-of-00001.parquet"
+
+
+# тут загружаем собранные мной примеры
+def load_synthetic_txt(file_path):
+    data = []
+    pattern = re.compile(r"\[(.*?)[\s,]*([01])[\s,]*([01])[\s,]*([01])\]$")
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+
+            match = pattern.search(line)
+            if match:
+                text, spam, toxic, obscenity = match.groups()
+                clean_text = text.strip().strip("'\"").rstrip(",")
+
+                data.append(
+                    {
+                        "text": clean_text,
+                        "spam": float(spam),
+                        "toxic": float(toxic),
+                        "obscenity": float(obscenity),
+                    }
+                )
+            else:
+                print("пу пу пу, по регулярке не зашло:", line)
+    return pd.DataFrame(data)
 
 
 def load_telegram_spam(filepath: Path) -> pd.DataFrame:
@@ -72,6 +104,7 @@ def load_hf_spam() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    df_synth = load_synthetic_txt(RAW_DIR / "synthetic.txt")
     df_spam_tg = load_telegram_spam(RAW_DIR / "telegram_spam.csv")
     df_spam_hf = load_hf_spam()
     df_pikabu = load_pikabu(RAW_DIR / "toxic_russian_comments_pikabu.csv")
@@ -80,9 +113,12 @@ if __name__ == "__main__":
     print(f"размер df_spam телега: {len(df_spam_tg)}")
     print(f"размер df_spam hugging face: {len(df_spam_hf)}")
 
-    final_df = pd.concat([df_spam_tg, df_ok, df_pikabu, df_spam_hf], ignore_index=True)
+    final_df = pd.concat(
+        [df_spam_tg, df_ok, df_pikabu, df_spam_hf, df_synth], ignore_index=True
+    )
     final_df = final_df.drop_duplicates(subset=["text"])
     final_df = final_df.dropna(subset=["text"])
+    final_df = final_df.sample(frac=1).reset_index(drop=True)
 
     train_df, temp_df = train_test_split(
         final_df, test_size=0.2, random_state=config.seed

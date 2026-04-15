@@ -12,3 +12,5 @@ wheels/
 # мои сырые файлики датасетики
 data/raw/*
 data/processed/*
+src/predict.py
+*pth
