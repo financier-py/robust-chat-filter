@@ -42,7 +42,7 @@ _тут появятся норм но потом пока мне лень_
 Я использую `uv`.
 
 ```bash
-git clone https://github.com/твое_имя/robust-chat-filter.git
+git clone https://github.com/financier-py/robust-chat-filter.git
 cd robust-chat-filter
 
 uv sync
