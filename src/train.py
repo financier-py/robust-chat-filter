@@ -17,32 +17,40 @@ PROCESSED_DIR = BASE_DIR / "data" / "processed"
 
 
 def get_class_weights(df: pd.DataFrame):
-    num_samples = len(df)
     pos_weights = []
     for col in ["spam", "toxic", "obscenity"]:
+        num_known = df[col].notna().sum()
         num_cls = df[col].sum()
-        weight = np.log(num_samples / (num_cls + 1))
+        weight = np.log(num_known / (num_cls + 1))
         pos_weights.append(weight)
     return torch.tensor(pos_weights, dtype=torch.float32)
 
 
-# было добавлено тк датасет очень кривой
-def soft_bce_loss(y_pred, y_true, pos_w):
+def masked_bce_loss(y_pred, y_true, mask, pos_w):
     bce = F.binary_cross_entropy_with_logits(
         y_pred, y_true, pos_weight=pos_w, reduction="none"
     )
+    bce = bce * mask
+    return bce.sum() / mask.sum().clamp(min=1.0)
 
-    with torch.no_grad():
-        probs = torch.sigmoid(y_pred)
-    # если текст toxic но модель отвечает obscenity -> штрафуем меньше
-    false_obs = (y_true[:, 2] == 0) & (y_true[:, 1] == 1) & (probs[:, 2] > 0.5)
-    bce[false_obs, 2] *= 0.3
 
-    # если текст obscenity но модель отвечает toxic -> штрафуем меньше
-    false_toxic = (y_true[:, 2] == 1) & (y_true[:, 1] == 0) & (probs[:, 1] > 0.5)
-    bce[false_toxic, 1] *= 0.3
+# было добавлено тк датасет очень кривой
+# def soft_bce_loss(y_pred, y_true, pos_w):
+#     bce = F.binary_cross_entropy_with_logits(
+#         y_pred, y_true, pos_weight=pos_w, reduction="none"
+#     )
 
-    return bce.mean()
+#     with torch.no_grad():
+#         probs = torch.sigmoid(y_pred)
+#     # если текст toxic но модель отвечает obscenity -> штрафуем меньше
+#     false_obs = (y_true[:, 2] == 0) & (y_true[:, 1] == 1) & (probs[:, 2] > 0.5)
+#     bce[false_obs, 2] *= 0.3
+
+#     # если текст obscenity но модель отвечает toxic -> штрафуем меньше
+#     false_toxic = (y_true[:, 2] == 1) & (y_true[:, 1] == 0) & (probs[:, 1] > 0.5)
+#     bce[false_toxic, 1] *= 0.3
+
+#     return bce.mean()
 
 
 def train():
@@ -67,7 +75,7 @@ def train():
     model = CharNet(config.vocab_size, config.embed_dim, config.dropout).to(device)
 
     # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
-    optimizer = AdamW(params=model.parameters(), lr=config.lr, weight_decay=0.05)
+    optimizer = AdamW(params=model.parameters(), lr=config.lr, weight_decay=0.01)
 
     # добавил тк появилось плато посмотрим поможет ли хз
     scheduler = ReduceLROnPlateau(
@@ -84,13 +92,14 @@ def train():
 
         progress_bar = tqdm(dataloader, desc=f"Эпоха {epoch + 1}/{config.epochs}")
 
-        for batch_idx, (x, y_true) in enumerate(progress_bar):
+        for batch_idx, (x, y_true, mask) in enumerate(progress_bar):
             x = x.to(device)
             y_true = y_true.to(device)
+            mask = mask.to(device)
 
             optimizer.zero_grad()
             y_pred = model(x)
-            cur_loss = soft_bce_loss(y_pred, y_true, pos_weights)
+            cur_loss = masked_bce_loss(y_pred, y_true, mask, pos_weights)
             cur_loss.backward()
             optimizer.step()
 
@@ -104,11 +113,12 @@ def train():
         with torch.no_grad():
             val_bar = tqdm(val_loader, desc=f"Эпоха {epoch + 1}/{config.epochs} [VAL]")
 
-            for x, y_true in val_bar:
+            for x, y_true, mask in val_bar:
                 x = x.to(device)
                 y_true = y_true.to(device)
+                mask = mask.to(device)
                 y_pred = model(x)
-                cur_loss = soft_bce_loss(y_pred, y_true, pos_weights)
+                cur_loss = masked_bce_loss(y_pred, y_true, mask, pos_weights)
                 val_loss += cur_loss.item()
                 val_bar.set_postfix(loss=cur_loss.item())
 
