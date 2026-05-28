@@ -6,7 +6,7 @@ class Config:
     max_len: int = 512
     alphabet: str = "abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя0123456789 -,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{} "
 
-    dropout: float = 0.4
+    dropout: float = 0.3
     embed_dim: int = 64
     batch_size: int = 512
     lr: float = 5e-4
