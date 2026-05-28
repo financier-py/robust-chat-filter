@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 import re
 from sklearn.model_selection import train_test_split
 
@@ -47,7 +48,7 @@ def load_synthetic_txt(file_path):
 
 def load_telegram_spam(filepath: Path) -> pd.DataFrame:
     df = pd.read_csv(filepath, usecols=["text"])
-    return df.assign(spam=1, toxic=0, obscenity=0)
+    return df.assign(spam=1, toxic=np.nan, obscenity=np.nan)
     # можно оптимальнее
     # df = pd.read_csv(filepath)
     # return pd.DataFrame({"text": df["text"], "spam": 1, "toxic": 0, "obscenity": 0})
@@ -57,7 +58,7 @@ def load_pikabu(filepath: Path) -> pd.DataFrame:
     df = (
         pd.read_csv(filepath)
         .rename(columns={"comment": "text"})
-        .assign(spam=0, toxic=lambda x: x["toxic"].astype(int), obscenity=0)
+        .assign(spam=0, toxic=lambda x: x["toxic"].astype(int), obscenity=np.nan)
     )
     return df
 
@@ -97,7 +98,7 @@ def load_hf_spam() -> pd.DataFrame:
         pd.read_parquet(URL_SPAM_HF)
         .query("label == 1")
         .rename(columns={"message": "text", "label": "spam"})
-        .assign(toxic=0, obscenity=0)
+        .assign(toxic=np.nan, obscenity=np.nan)
         .reset_index(drop=True)
         .sample(25_000)
     )
