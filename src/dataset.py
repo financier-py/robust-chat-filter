@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
+import numpy as np
 
 from config import config
 
@@ -27,11 +28,14 @@ class CharDataset(Dataset):
         else:
             encoded = encoded + [0] * (self.max_len - len(encoded))
 
-        labels = self.df.iloc[index][["spam", "toxic", "obscenity"]].values.astype(
-            float
-        )
-        return torch.tensor(encoded, dtype=torch.long), torch.tensor(
-            labels, dtype=torch.float
+        labels = self.df.iloc[index][["spam", "toxic", "obscenity"]].values.astype(float)
+        mask = (~np.isnan(labels)).astype(float)   # 1 = метка известна
+        labels = np.nan_to_num(labels, nan=0) # nan to 0 
+
+        return (
+            torch.tensor(encoded, dtype=torch.long),
+            torch.tensor(labels, dtype=torch.float),
+            torch.tensor(mask, dtype=torch.float),
         )
 
 
