@@ -15,4 +15,5 @@ data/processed/*
 
 # пока в работе
 src/predict.py
+src/just_test.py
 *pth
